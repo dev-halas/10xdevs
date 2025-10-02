@@ -1,0 +1,34 @@
+{
+    "name": "server",
+    "version": "1.0.0",
+    "type": "commonjs",
+    "scripts": {
+        "server": "ts-node-dev --respawn --transpile-only src/server.ts",
+        "build": "tsc -p .",
+        "start": "node dist/server.js",
+        "prisma": "prisma",
+        "prisma:generate": "prisma generate",
+        "prisma:migrate": "prisma migrate dev --name init",
+        "prisma:studio": "prisma studio"
+    },
+    "dependencies": {
+        "@fastify/cookie": "^11.0.2",
+        "@fastify/cors": "^11.1.0",
+        "@fastify/helmet": "^13.0.2",
+        "@prisma/client": "^6.16.3",
+        "bcryptjs": "^2.4.3",
+        "jsonwebtoken": "^9.0.2",
+        "fastify": "^5.6.1",
+        "ioredis": "^5.4.1",
+        "zod": "^4.1.11"
+    },
+    "devDependencies": {
+        "@types/jsonwebtoken": "^9.0.6",
+        "@types/bcryptjs": "^2.4.6",
+        "@types/node": "^24.6.0",
+        "dotenv": "^17.2.3",
+        "prisma": "^6.16.3",
+        "ts-node-dev": "^2.0.0",
+        "typescript": "^5.9.2"
+    }
+}
