@@ -1,21 +1,13 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-
-interface User {
-  id: string;
-  email: string;
-  phone: string;
-}
-
-interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  login: (token: string, refreshToken: string, refreshTokenId: string, user: User) => void;
-  logout: () => void;
-  refreshToken: () => Promise<boolean>;
-}
+import { authService } from '../services/auth.service';
+import {
+  type User,
+  type LoginData,
+  type RegisterData,
+  type AuthContextType,
+} from '../utils/types';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -46,32 +38,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, []);
 
-  const login = (token: string, refreshToken: string, refreshTokenId: string, user: User) => {
-    localStorage.setItem('accessToken', token);
-    localStorage.setItem('refreshToken', refreshToken);
-    localStorage.setItem('refreshTokenId', refreshTokenId);
-    localStorage.setItem('user', JSON.stringify(user));
-    setUser(user);
+  const login = async (loginData: LoginData) => {
+    try {
+      const result = await authService.login(loginData);
+      
+      // Zapisz tokeny i dane użytkownika
+      localStorage.setItem('accessToken', result.tokens.token);
+      localStorage.setItem('refreshToken', result.tokens.refreshToken);
+      localStorage.setItem('refreshTokenId', result.tokens.refreshTokenId);
+      localStorage.setItem('user', JSON.stringify(result.user));
+      
+      setUser(result.user);
+    } catch (error) {
+      console.error('Błąd podczas logowania:', error);
+      throw error;
+    }
+  };
+
+  const register = async (registerData: RegisterData) => {
+    try {
+      const user = await authService.register(registerData);
+      
+      // Po udanej rejestracji ustaw użytkownika (ale bez tokenów)
+      setUser(user);
+    } catch (error) {
+      console.error('Błąd podczas rejestracji:', error);
+      throw error;
+    }
   };
 
   const logout = async () => {
     try {
       const refreshTokenId = localStorage.getItem('refreshTokenId');
-      const accessToken = localStorage.getItem('accessToken');
-      
-      // Wywołaj endpoint wylogowania na serwerze
-      if (refreshTokenId && accessToken) {
-        await fetch('http://localhost:3000/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ refreshTokenId }),
-        });
+      if (refreshTokenId) {
+        await authService.logout(refreshTokenId);
       }
     } catch (error) {
       console.error('Błąd podczas wylogowania:', error);
+      throw error;
     } finally {
       // Wyczyść dane lokalnie niezależnie od wyniku
       localStorage.removeItem('accessToken');
@@ -84,38 +88,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshToken = async (): Promise<boolean> => {
     try {
-      const storedRefreshToken = localStorage.getItem('refreshToken');
-      const storedRefreshTokenId = localStorage.getItem('refreshTokenId');
-      const accessToken = localStorage.getItem('accessToken');
-
-      if (!storedRefreshToken || !storedRefreshTokenId || !accessToken) {
-        return false;
-      }
-
-      const response = await fetch('http://localhost:3000/api/auth/refresh', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          refreshTokenId: storedRefreshTokenId,
-          refreshToken: storedRefreshToken,
-        }),
-      });
-
-      if (!response.ok) {
-        return false;
-      }
-
-      const data = await response.json();
+      // Przepuść refreshToken przez axios interceptor
+      // Mock request który uruchomi refresh w axios wrapperze
+      const refreshTokenId = localStorage.getItem('refreshTokenId');
+      const refreshTokenVal = localStorage.getItem('refreshToken');
       
-      // Zaktualizuj tokeny
-      localStorage.setItem('accessToken', data.token);
-      localStorage.setItem('refreshToken', data.refreshToken);
-      localStorage.setItem('refreshTokenId', data.refreshTokenId);
-
-      return true;
+      if (refreshTokenId && refreshTokenVal) {
+        await authService.refreshToken({ refreshTokenId, refreshToken: refreshTokenVal });
+        return true;
+      }
+      return false;
     } catch (error) {
       console.error('Błąd podczas odświeżania tokenu:', error);
       return false;
@@ -127,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated,
     isLoading,
     login,
+    register,
     logout,
     refreshToken,
   };

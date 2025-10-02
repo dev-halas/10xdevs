@@ -24,7 +24,7 @@ export default function Home() {
 
     const fetchHealthcheck = async () => {
       try {
-        const res = await fetch("/api/healthcheck", { credentials: "include" });
+        const res = await fetch("http://localhost:3000/api/healthcheck", { credentials: "include" });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = (await res.json()) as HealthResponse;
         setHealth(data);

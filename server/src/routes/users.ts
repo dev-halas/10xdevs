@@ -14,7 +14,7 @@ const UsersQuerySchema = z.object({
 });
 
 export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
-  // Protected route - tylko dla authenticated users
+  // Protected route - only for authenticated users
   app.get("/api/users", { preHandler: requireAuth }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const response = createResponseBuilder(reply);
@@ -74,14 +74,14 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
       return response.paginated(
         pagination.data,
         pagination.pagination,
-        "Lista użytkowników pobrana pomyślnie"
+        "Users list successfully fetched"
       );
     } catch (error) {
       return handleError(error, reply);
     }
   });
 
-  // Public route dla dostępności systemu (bez wrażliwych danych)
+  // Public route for system availability (without sensitive data)
   app.get("/api/users/public", async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const response = createResponseBuilder(reply);
@@ -96,7 +96,7 @@ export async function registerUserRoutes(app: FastifyInstance): Promise<void> {
         totalUsers: publicStats._count.id,
         firstRegistration: publicStats._min.createdAt,
         latestRegistration: publicStats._max.createdAt,
-      }, "Publiczne statystyki użytkowników");
+      }, "Public users stats");
     } catch (error) {
       return handleError(error, reply);
     }

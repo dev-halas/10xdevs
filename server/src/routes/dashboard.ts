@@ -35,7 +35,7 @@ export async function registerDashboardRoutes(app: FastifyInstance): Promise<voi
       });
 
       if (!userData) {
-        return response.notFound('Użytkownik nie znaleziony');
+        return response.notFound('User not found');
       }
 
       const dashboardData = {
@@ -52,7 +52,7 @@ export async function registerDashboardRoutes(app: FastifyInstance): Promise<voi
         },
       };
 
-      return response.ok(dashboardData, "Witaj w dashboard!");
+      return response.ok(dashboardData, "Welcome to dashboard!");
     } catch (error) {
       return handleError(error, reply);
     }

@@ -3,12 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../contexts/AuthContext';
-
-interface AuthGuardProps {
-  children: React.ReactNode;
-  requireAuth?: boolean;
-  redirectTo?: string;
-}
+import { type AuthGuardProps } from '../utils/types';
 
 export default function AuthGuard({ 
   children, 

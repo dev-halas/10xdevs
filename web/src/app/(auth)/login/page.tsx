@@ -19,37 +19,23 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:3000/api/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          identifier: email.trim(), // email lub telefon
-          password,
-        }),
+      // Użyj nowego API przez AuthContext
+      await login({
+        identifier: email.trim(),
+        password: password,
       });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (data.issues) {
-          // Błędy walidacji Zod
-          const errors = Object.values(data.issues.fieldErrors).flat();
-          setError(errors.join(", "));
-        } else {
-          setError(data.message || "Nie udało się zalogować");
-        }
-        return;
-      }
-
-      // Użyj funkcji login z kontekstu
-      login(data.token, data.refreshToken, data.refreshTokenId, data.user);
 
       // Przekieruj do dashboardu
       router.push("/dashboard");
-    } catch {
-      setError("Błąd połączenia z serwerem");
+    } catch (error: unknown) {
+      // Obsługa błędów z nowego API
+      if (error instanceof Error && error.message) {
+        setError(error.message);
+      } else if (typeof error === 'string') {
+        setError(error);
+      } else {
+        setError("Błąd połączenia z serwerem");
+      }
     } finally {
       setLoading(false);
     }
@@ -98,5 +84,6 @@ export default function LoginPage() {
     </div>
   );
 }
+
 
 

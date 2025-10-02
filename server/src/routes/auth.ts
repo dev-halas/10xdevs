@@ -19,26 +19,26 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
     try {
       const response = createResponseBuilder(reply);
       
-      // Walidacja danych wejściowych
+      // Validate input data
       const parsed = ValidationSchemas.register.parse(request.body);
       
-      // Normalizacja danych
+      // Normalize data
       const email = DataNormalizers.email(parsed.email);
       const phone = DataNormalizers.phone(parsed.phone);
 
-      // Hashowanie hasła
+      // Hash password
       const passwordHash = await PasswordHelpers.hash(parsed.password);
 
-      // Tworzenie użytkownika - polega na unikalnych indeksach (race-safe)
+      // Create user - relies on unique indices (race-safe)
       const user = await prisma.user.create({
         data: { email, phone, passwordHash },
         select: { id: true, email: true, phone: true, createdAt: true },
       });
 
-      // Walidacja odpowiedzi (tylko w dev)
+      // Validate response (only in dev)
       ResponseValidators.validateResponse(ResponseValidators.registerResponse, { user });
 
-      return response.created(user, "Użytkownik został pomyślnie zarejestrowany");
+      return response.created(user, "User successfully registered");
     } catch (error) {
       return handleError(error, reply);
     }
@@ -49,38 +49,38 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
     try {
       const response = createResponseBuilder(reply);
       
-      // Walidacja danych wejściowych
+      // Validate input data
       const parsed = ValidationSchemas.login.parse(request.body);
       
-      // Normalizacja identyfikatora
+      // Normalize identifier
       const { isEmail, normalized } = DataNormalizers.identifier(parsed.identifier);
       const where = isEmail 
         ? { email: normalized } 
         : { phone: normalized };
 
-      // Znajdź użytkownika
+      // Find user
       const user = await prisma.user.findUnique({
         where,
         select: { id: true, email: true, phone: true, passwordHash: true },
       });
 
       if (!user) {
-        throw ErrorFactory.unauthorized("Nieprawidłowe dane logowania");
+        throw ErrorFactory.unauthorized("Invalid login data");
       }
 
-      // Weryfikacja hasła
+      // Verify password
       const isPasswordValid = await PasswordHelpers.verify(parsed.password, user.passwordHash);
       if (!isPasswordValid) {
-        throw ErrorFactory.unauthorized("Nieprawidłowe dane logowania");
+        throw ErrorFactory.unauthorized("Invalid login data");
       }
 
-      // Generowanie tokenów
+      // Generate tokens
       const token = TokenHelpers.generateAccessToken(user.id);
       const { id: refreshTokenId, token: refreshToken } = await TokenHelpers.generateRefreshToken(user.id);
 
       const publicUser = UserHelpers.createPublicUser(user);
       
-      // Walidacja odpowiedzi (tylko w dev)
+      // Validate response (only in dev)
       ResponseValidators.validateResponse(ResponseValidators.loginResponse, { 
         user: publicUser, 
         token, 
@@ -94,7 +94,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
         refreshTokenId 
       };
 
-      return response.ok(loginData, "Logowanie zakończone pomyślnie");
+      return response.ok(loginData, "Login successful");
     } catch (error) {
       return handleError(error, reply);
     }
@@ -109,12 +109,12 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
         (data) => !data.refreshTokenId || data.refreshTokenId.trim().length > 0
       ).parse(request.body);
 
-      // Jeśli użytkownik jest zalogowany i podał refreshTokenId, usuń go
+      // If user is logged in and provided refreshTokenId, delete it
       if (request.user?.id && body.refreshTokenId) {
         await TokenHelpers.revokeRefreshToken(request.user.id, body.refreshTokenId);
       }
 
-      return response.ok(null, "Wylogowano");
+      return response.ok(null, "Logged out");
     } catch (error) {
       return handleError(error, reply);
     }
@@ -128,10 +128,10 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
       const body = ValidationSchemas.refresh.parse(request.body);
       
       if (!request.user?.id) {
-        throw ErrorFactory.unauthorized("Brak kontekstu użytkownika");
+        throw ErrorFactory.unauthorized("User context not found");
       }
 
-      // Sprawdź czy refresh token jest prawidłowy
+      // Verify if refresh token is valid
       const isValidRefreshToken = await TokenHelpers.verifyRefreshToken(
         request.user.id,
         body.refreshTokenId,
@@ -139,21 +139,21 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
       );
 
       if (!isValidRefreshToken) {
-        throw ErrorFactory.unauthorized("Nieprawidłowy refresh token");
+        throw ErrorFactory.unauthorized("Invalid refresh token");
       }
 
-      // Pobierz stary access token z nagłówka dla blacklistowania
+      // Get old access token from header for blacklisting
       const auth = request.headers["authorization"];
       const oldToken = typeof auth === "string" ? auth.split(" ")[1] : null;
 
-      // Usuń stary refresh token
+      // Delete old refresh token
       await TokenHelpers.revokeRefreshToken(request.user.id, body.refreshTokenId);
 
-      // Generuj nowe tokeny
+      // Generate new tokens
       const newAccessToken = TokenHelpers.generateAccessToken(request.user.id);
       const { id: newRefreshTokenId, token: newRefreshToken } = await TokenHelpers.generateRefreshToken(request.user.id);
 
-      // Dodaj stary access token do blacklisty
+      // Add old access token to blacklist
       if (oldToken) {
         await addToBlacklist(oldToken, JWT_EXPIRES_IN_SECONDS);
       }
@@ -164,7 +164,7 @@ export async function registerAuthRoutes(app: FastifyInstance): Promise<void> {
         refreshToken: newRefreshToken 
       };
 
-      return response.ok(refreshData, "Token został odświeżony");
+      return response.ok(refreshData, "Token refreshed");
     } catch (error) {
       return handleError(error, reply);
     }

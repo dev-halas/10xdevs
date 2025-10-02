@@ -13,20 +13,20 @@ export async function registerCompanyRoutes(app: FastifyInstance): Promise<void>
       const userId = request.user!.id;
       const response = createResponseBuilder(reply);
 
-      // Walidacja i normalizacja danych wejściowych
+      // Validate and normalize input data
       const parsed = CompanyValidationSchemas.create.parse(request.body);
       
-      // Normalizacja danych
+      // Normalize data
       const normalizedData = {
         name: CompanyDataNormalizers.name(parsed.name),
         nip: CompanyDataNormalizers.nip(parsed.nip),
         regon: CompanyDataNormalizers.regon(parsed.regon),
       };
 
-      // Walidacja biznesowa
+      // Business validation
       CompanyValidators.validateCompanyData(normalizedData);
 
-      // Tworzenie firmy
+      // Create company
       const company = await prisma.company.create({
         data: { ...normalizedData, userId },
         select: {
@@ -39,13 +39,13 @@ export async function registerCompanyRoutes(app: FastifyInstance): Promise<void>
         }
       });
 
-      return response.created(company, "Firma została pomyślnie dodana");
+      return response.created(company, "Company successfully created");
     } catch (error) {
       return handleError(error, reply);
     }
   });
 
-  // Get all user's companies with pagination
+  // Get all user's companies with pagination and search
   app.get("/api/companies", { preHandler: requireAuth }, async (request: FastifyRequest, reply: FastifyReply) => {
     try {
       const userId = request.user!.id;
@@ -58,7 +58,7 @@ export async function registerCompanyRoutes(app: FastifyInstance): Promise<void>
         skip: PaginationHelpers.calculateSkip(queryParams.page, queryParams.limit),
       };
 
-      // Get companies with pagination
+      // Get companies with pagination and search 
       const [companies, totalCount] = await Promise.all([
         prisma.company.findMany({
           where: { userId },
@@ -83,7 +83,7 @@ export async function registerCompanyRoutes(app: FastifyInstance): Promise<void>
         paginationInfo
       );
 
-      return response.paginated(pagination.data, pagination.pagination, "Firmy użytkownika pobrane pomyślnie");
+      return response.paginated(pagination.data, pagination.pagination, "User companies successfully fetched");
     } catch (error) {
       return handleError(error, reply);
     }
@@ -110,10 +110,10 @@ export async function registerCompanyRoutes(app: FastifyInstance): Promise<void>
       });
 
       if (!company) {
-        return response.notFound("Firma nie została znaleziona");
+        return response.notFound("Company not found");
       }
 
-      return response.ok(company, "Firma pobrana pomyślnie");
+      return response.ok(company, "Company successfully fetched");
     } catch (error) {
       return handleError(error, reply);
     }
