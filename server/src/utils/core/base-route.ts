@@ -21,7 +21,7 @@ export abstract class BaseRoute<TBody = any, TParams = any, TQuery = any> {
     this.reply = reply;
   }
 
-  // Template method - klasa bazowa wywołuje execute, która jest implementowana w klasach potomnych
+  // Template method - base class calls execute, which is implemented in child classes
   async handle(): Promise<FastifyReply> {
     try {
       return await this.execute();
@@ -81,7 +81,7 @@ export abstract class BaseRoute<TBody = any, TParams = any, TQuery = any> {
   }
 }
 
-// Factory function dla tworzenia handler functions
+// Factory function for creating handler functions
 export function createRouteHandler<TBody = any, TParams = any, TQuery = any>(
   RouteClass: new (request: FastifyRequest, reply: FastifyReply) => BaseRoute<TBody, TParams, TQuery>
 ): (request: FastifyRequest, reply: FastifyReply) => Promise<FastifyReply> {

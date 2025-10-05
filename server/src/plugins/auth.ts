@@ -1,8 +1,7 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from "fastify";
+import { FastifyInstance, FastifyRequest } from "fastify";
 import jwt from "jsonwebtoken";
 import { JWT_SECRET } from "../utils/config";
 import { isBlacklisted } from "../utils/redis";
-import { createResponseBuilder } from "../utils/core/api-standards";
 
 // Fastify augmentation dla obsługi user context
 declare module "fastify" {
@@ -56,7 +55,6 @@ export const AuthHelpers = {
   },
 };
 
-// Main auth plugin registration
 export function registerAuthPlugin(app: FastifyInstance): void {
   app.addHook("preHandler", async (request) => {
     const token = AuthHelpers.extractBearerToken(request.headers["authorization"]);
@@ -73,60 +71,5 @@ export function registerAuthPlugin(app: FastifyInstance): void {
   });
 }
 
-// Auth middleware functions
-export const AuthMiddleware = {
-  requireAuth: async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-    if (!request.user?.id) {
-      const response = createResponseBuilder(reply);
-      throw response.unauthorized("Wymagane zalogowanie");
-    }
-  },
-
-  requireAdmin: async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-    // Placeholder dla przyszłej rolowej autoryzacji
-    await AuthMiddleware.requireAuth(request, reply);
-    
-    // Przykład dla przyszłej implementacji:
-    // if (!request.user?.isAdmin) {
-    //   const response = createResponseBuilder(reply);
-    //   throw response.forbidden("Wymagane uprawnienia administratora");
-    // }
-  },
-
-  optionalAuth: async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
-    // Dla endpoint-ów które działają zarówno z auth jak i bez
-    // Authentication is optional - jeśli token istnieje i jest prawidłowy, setuj request.user
-    // jeśli nie - po prostu kontynuuj bez request.user
-    return; // Implementacja już jest w preHandler
-  },
-};
-
-// Utility functions for auth
-export const AuthUtils = {
-  isAuthenticated: (request: FastifyRequest): boolean => {
-    return Boolean(request.user?.id);
-  },
-
-  getUserId: (request: FastifyRequest): string | null => {
-    return request.user?.id || null;
-  },
-
-  requireUserId: (request: FastifyRequest): string => {
-    if (!request.user?.id) {
-      throw new Error("User ID required but not found in request context");
-    }
-    return request.user.id;
-  },
-
-  hasPermission: (request: FastifyRequest, permission: string): boolean => {
-    // Placeholder dla przyszłego systemu uprawnień
-    return AuthUtils.isAuthenticated(request);
-  },
-};
-
-// Legacy compatibility function
-export async function requireAuth(request: FastifyRequest, reply: FastifyReply): Promise<void> {
-  return AuthMiddleware.requireAuth(request, reply);
-}
 
 

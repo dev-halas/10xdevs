@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { ErrorFactory } from "../error-handler";
 
-// Schematy walidacji dla companies
+// Schemas for validating company data
 export const CompanyValidationSchemas = {
   create: z.object({
     name: z.string()
@@ -26,7 +26,7 @@ export const CompanyValidationSchemas = {
   }),
 };
 
-// Funkcje normalizacji danych firm
+// Functions for normalizing company data
 export const CompanyDataNormalizers = {
   nip: (nip: string): string => {
     const clean = nip.replace(/[\s\-]/g, "");
@@ -66,7 +66,7 @@ export const CompanyValidators = {
   },
 };
 
-// Funkcje związane z użytkownikiem i uprawnieniami
+// Functions related to user and permissions
 export const CompanyAccessControl = {
   ensureUserOwnsCompany: async (
     userId: string, 
@@ -109,7 +109,7 @@ export const CompanyAccessControl = {
   },
 };
 
-// Response builders
+// Response builders for companies
 export const CompanyResponseBuilders = {
   createCompanyResponse: (company: any) => ({
     company: CompanyResponseBuilders.formatCompany(company),
