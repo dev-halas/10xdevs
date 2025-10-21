@@ -136,7 +136,7 @@ export function createResponseBuilder(reply: FastifyReply, requestId?: string): 
   return new ResponseBuilder(reply, requestId || reply.request.headers["x-request-id"] as string);
 }
 
-// Standard schematy odpowiedzi (dla dokumentacji API)
+// Standard response schemas (for API documentation)
 export const ApiResponseSchemas = {
   UserResponse: {
     type: "object",

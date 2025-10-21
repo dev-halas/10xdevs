@@ -43,7 +43,7 @@ export const CompanyDataNormalizers = {
   },
 };
 
-// Funkcje walidacji biznesowej
+// Functions for business validation
 export const CompanyValidators = {
   validateNip: (nip: string): void => {
     if (!/^\d{10}$/.test(nip)) {

@@ -33,7 +33,7 @@ export interface PaginationResult<T> {
   };
 }
 
-// Helper functions dla paginacji
+// Helper functions for pagination
 export const PaginationHelpers = {
   parseParams: (query: any): PaginationQuery => {
     return PaginationSchema.parse(query);
@@ -81,7 +81,7 @@ export const PaginationHelpers = {
   },
 };
 
-// Database helper dla łatwej paginacji z Prisma
+// Database helper for easy pagination with Prisma
 export const DatabasePagination = {
   async paginate<T>(
     prismaQuery: any,

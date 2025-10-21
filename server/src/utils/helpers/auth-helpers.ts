@@ -5,7 +5,7 @@ import jwt from "jsonwebtoken";
 import { BCRYPT_SALT_ROUNDS, JWT_SECRET, JWT_EXPIRES_IN_SECONDS, REFRESH_TOKEN_TTL_SECONDS } from "../config";
 import { redis, buildRefreshTokenKey } from "../redis";
 
-// Schematy walidacji raz jeszcze w jednym miejscu
+// Schemas for validation again in one place
 export const ValidationSchemas = {
   register: z.object({
     email: z.string().min(1, "E-mail jest wymagany").email("Nieprawidłowy format e-mail"),
@@ -36,7 +36,7 @@ export const ValidationSchemas = {
   }),
 };
 
-// Funkcje normalizacji danych
+// Functions for data normalization
 export const DataNormalizers = {
   email: (email: string): string => email.trim().toLowerCase(),
   
@@ -54,7 +54,7 @@ export const DataNormalizers = {
   },
 };
 
-// Funkcje związane z hasłem
+// Functions related to password
 export const PasswordHelpers = {
   hash: async (password: string): Promise<string> => {
     return bcrypt.hash(password, BCRYPT_SALT_ROUNDS);
@@ -65,7 +65,7 @@ export const PasswordHelpers = {
   },
 };
 
-// Funkcje związane z tokenami JWT
+// Functions related to JWT tokens
 export const TokenHelpers = {
   generateAccessToken: (userId: string): string => {
     return jwt.sign({ sub: userId }, JWT_SECRET, { 
@@ -103,7 +103,7 @@ export const TokenHelpers = {
   },
 };
 
-// Funkcje związane z użytkownikiem
+// Functions related to user
 export const UserHelpers = {
   sanitizeUser: <T extends { passwordHash?: any }>(user: T): Omit<T, 'passwordHash'> => {
     const { passwordHash, ...sanitized } = user;
@@ -117,7 +117,7 @@ export const UserHelpers = {
   }),
 };
 
-// Funkcje walidacji odpowiedzi (dev only)
+// Functions for response validation (dev only)
 export const ResponseValidators = {
   registerResponse: z.object({
     user: z.object({

@@ -36,7 +36,7 @@ export abstract class BaseRoute<TBody = any, TParams = any, TQuery = any> {
   // Helper methods dostępne dla wszystkich klas potomnych
   protected getUserId(): string {
     if (!this.request.user?.id) {
-      throw ErrorFactory.unauthorized("Wymagane zalogowanie");
+      throw ErrorFactory.unauthorized("Login required");
     }
     return this.request.user.id;
   }
@@ -69,7 +69,7 @@ export abstract class BaseRoute<TBody = any, TParams = any, TQuery = any> {
   }
 
   protected notFound(message?: string): FastifyReply {
-    throw ErrorFactory.notFound(message || "Zasób nie został znaleziony");
+    throw ErrorFactory.notFound(message || "Resource not found");
   }
 
   protected badRequest(message: string): FastifyReply {
@@ -77,7 +77,7 @@ export abstract class BaseRoute<TBody = any, TParams = any, TQuery = any> {
   }
 
   protected unauthorized(message?: string): FastifyReply {
-    throw ErrorFactory.unauthorized(message || "Wymagane zalogowanie");
+    throw ErrorFactory.unauthorized(message || "Login required");
   }
 }
 
