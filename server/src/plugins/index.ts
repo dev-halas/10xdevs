@@ -5,7 +5,11 @@ import cookie from "@fastify/cookie";
 
 export function registerPlugins(app: FastifyInstance): void {
   app.register(helmet, { global: true });
-  app.register(cors, { origin: true, credentials: true });
+  app.register(cors, { 
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
+  });
   app.register(cookie);
 }
 

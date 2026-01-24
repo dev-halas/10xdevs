@@ -16,6 +16,22 @@ export const CompanyValidationSchemas = {
       .regex(/^[0-9\s\-]{9,17}$/, "Nieprawidłowy format REGON"),
   }),
 
+  update: z.object({
+    name: z.string()
+      .min(1, "Nazwa firmy jest wymagana")
+      .max(100, "Nazwa firmy może mieć max. 100 znaków")
+      .transform(val => val.trim())
+      .optional(),
+    nip: z.string()
+      .min(1, "NIP jest wymagany")
+      .regex(/^[0-9\s\-]{10,13}$/, "Nieprawidłowy format NIP")
+      .optional(),
+    regon: z.string()
+      .min(1, "REGON jest wymagany")
+      .regex(/^[0-9\s\-]{9,17}$/, "Nieprawidłowy format REGON")
+      .optional(),
+  }),
+
   params: z.object({
     id: z.string().min(1, "ID firmy jest wymagane"),
   }),

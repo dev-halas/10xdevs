@@ -3,12 +3,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { companiesService } from '../services/companies.service';
 import { type CompanyDetailsProps, type Company } from '../utils/types';
+import EditCompanyForm from './EditCompanyForm';
 import styles from '../app/page.module.css';
 
 export default function CompanyDetails({ companyId, onBack }: CompanyDetailsProps) {
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadCompany = useCallback(async () => {
     try {
@@ -37,7 +41,39 @@ export default function CompanyDetails({ companyId, onBack }: CompanyDetailsProp
       const url = new URL(window.location.href);
       url.searchParams.delete('company');
       window.history.replaceState({}, '', url.toString());
-      // Można też użyć router.push('/dashboard') jeśli używasz Next.js router
+      window.location.reload();
+    }
+  };
+
+  const handleEditSuccess = () => {
+    setIsEditing(false);
+    loadCompany(); // Odśwież dane firmy
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteConfirm(true);
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      setIsDeleting(true);
+      setError(null);
+      await companiesService.deleteCompany(companyId);
+      // Po usunięciu wróć do listy
+      handleBack();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Błąd podczas usuwania firmy');
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -90,6 +126,72 @@ export default function CompanyDetails({ companyId, onBack }: CompanyDetailsProp
           >
             Powrót do listy
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Jeśli jesteśmy w trybie edycji, pokaż formularz edycji
+  if (isEditing) {
+    return (
+      <EditCompanyForm 
+        company={company}
+        onSuccess={handleEditSuccess}
+        onCancel={handleCancelEdit}
+      />
+    );
+  }
+
+  // Modal potwierdzenia usunięcia
+  if (showDeleteConfirm) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.card}>
+          <h2 style={{ color: '#dc3545', marginBottom: '20px' }}>Potwierdź usunięcie</h2>
+          <p style={{ marginBottom: '10px' }}>
+            Czy na pewno chcesz usunąć firmę <strong>{company.name}</strong>?
+          </p>
+          <p style={{ color: '#dc3545', fontSize: '14px', marginBottom: '20px' }}>
+            Ta operacja jest nieodwracalna!
+          </p>
+          
+          <div style={{ 
+            backgroundColor: 'rgba(255, 255, 255, 0.05)', 
+            padding: '15px', 
+            borderRadius: '8px', 
+            marginBottom: '20px' 
+          }}>
+            <p style={{ margin: '0 0 8px 0', fontSize: '14px' }}><strong>NIP:</strong> {company.nip}</p>
+            <p style={{ margin: '0', fontSize: '14px' }}><strong>REGON:</strong> {company.regon}</p>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              onClick={handleConfirmDelete}
+              disabled={isDeleting}
+              className={styles.btn}
+              style={{ 
+                flex: 1,
+                backgroundColor: isDeleting ? '#888' : '#dc3545',
+                color: 'white',
+                cursor: isDeleting ? 'not-allowed' : 'pointer'
+              }}
+            >
+              {isDeleting ? 'Usuwanie...' : 'Tak, usuń firmę'}
+            </button>
+            <button 
+              onClick={handleCancelDelete}
+              disabled={isDeleting}
+              className={styles.btn}
+              style={{ 
+                flex: 1,
+                backgroundColor: '#6c757d',
+                color: 'white'
+              }}
+            >
+              Anuluj
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -163,32 +265,15 @@ export default function CompanyDetails({ companyId, onBack }: CompanyDetailsProp
             <button 
               className={styles.btn}
               style={{ backgroundColor: '#007bff' }}
-              onClick={() => {
-                // Tutaj możesz dodać akcję edycji firmy
-                alert('Funkcja edycji zostanie dodana wkrótce');
-              }}
+              onClick={() => setIsEditing(true)}
             >
               Edytuj firmę
             </button>
             
             <button 
               className={styles.btn}
-              style={{ backgroundColor: '#28a745' }}
-              onClick={() => {
-                // Tutaj możesz dodać akcję np. eksportu danych
-                alert('Funkcja eksportu zostanie dodana wkrótce');
-              }}
-            >
-              Eksportuj dane
-            </button>
-            
-            <button 
-              className={styles.btn}
               style={{ backgroundColor: '#dc3545' }}
-              onClick={() => {
-                // Tutaj możesz dodać akcję usuwania firmy
-                alert('Funkcja usuwania zostanie dodana wkrótce');
-              }}
+              onClick={handleDeleteClick}
             >
               Usuń firmę
             </button>

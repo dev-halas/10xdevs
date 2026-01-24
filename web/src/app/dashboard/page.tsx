@@ -4,14 +4,16 @@ import { useAuth } from "../../contexts/AuthContext";
 import AuthGuard from "../../components/AuthGuard";
 import CompaniesList from "../../components/CompaniesList";
 import CompanyDetails from "../../components/CompanyDetails";
+import AddCompanyForm from "../../components/AddCompanyForm";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { Suspense, useState } from "react";
 import styles from "../page.module.css";
 
 function DashboardContent() {
   const { user, logout } = useAuth();
   const searchParams = useSearchParams();
   const companyId = searchParams.get('company');
+  const [showAddForm, setShowAddForm] = useState(false);
 
   const handleLogout = async () => {
     await logout();
@@ -23,6 +25,26 @@ function DashboardContent() {
     url.searchParams.delete('company');
     window.history.replaceState({}, '', url.toString());
   };
+
+  const handleAddCompanySuccess = () => {
+    setShowAddForm(false);
+    // Odśwież listę firm
+    window.location.reload();
+  };
+
+  const handleCancelAddCompany = () => {
+    setShowAddForm(false);
+  };
+
+  // Jeśli pokazujemy formularz dodawania firmy
+  if (showAddForm) {
+    return (
+      <AddCompanyForm 
+        onSuccess={handleAddCompanySuccess}
+        onCancel={handleCancelAddCompany}
+      />
+    );
+  }
 
   // Jeśli mamy companyId w query params, pokaż szczegóły firmy
   if (companyId) {
@@ -48,17 +70,29 @@ function DashboardContent() {
             <p><strong>Telefon:</strong> {user?.phone}</p>
           </div>
 
-          <button 
-            onClick={handleLogout}
-            className={styles.btn}
-            style={{ 
-              marginBottom: '30px', 
-              backgroundColor: '#dc3545',
-              color: 'white'
-            }}
-          >
-            Wyloguj się
-          </button>
+          <div style={{ display: 'flex', gap: '10px', marginBottom: '30px' }}>
+            <button 
+              onClick={handleLogout}
+              className={styles.btn}
+              style={{ 
+                backgroundColor: '#dc3545',
+                color: 'white'
+              }}
+            >
+              Wyloguj się
+            </button>
+
+            <button 
+              onClick={() => setShowAddForm(true)}
+              className={styles.btn}
+              style={{ 
+                backgroundColor: '#28a745',
+                color: 'white'
+              }}
+            >
+              + Dodaj firmę
+            </button>
+          </div>
         </div>
         
         {/* Lista firm */}

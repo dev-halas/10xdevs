@@ -34,17 +34,17 @@ export const companiesService = {
 
   // Stwórz nową firmę
   async createCompany(data: CreateCompanyData): Promise<Company> {
-    return apiClient.post<Company>('/companies', data);
+    return apiClient.post<Company>('/companies/add', data);
   },
 
   // Aktualizuj firmę
   async updateCompany(id: string, data: UpdateCompanyData): Promise<Company> {
-    return apiClient.put<Company>(`/companies/${id}`, data);
+    return apiClient.post<Company>(`/companies/update/${id}`, data);
   },
 
   // Usuń firmę
-  async deleteCompany(id: string): Promise<void> {
-    return apiClient.delete<void>(`/companies/${id}`);
+  async deleteCompany(id: string): Promise<{ id: string; name: string }> {
+    return apiClient.delete<{ id: string; name: string }>(`/companies/delete/${id}`);
   },
 };
 
