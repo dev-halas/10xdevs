@@ -1,34 +1,57 @@
-# Testy Jednostkowe - Server
+# Testy - Server
 
-Kompletny zestaw testów jednostkowych dla warstwy backend.
+Kompletny zestaw testów jednostkowych i end-to-end dla warstwy backend.
 
-## Struktura testów
+## 📁 Struktura testów
 
 ```
 src/
+├── controllers/
+│   └── tests/
+│       ├── auth.controller.test.ts
+│       ├── companies.controller.test.ts
+│       └── dashboard.controller.test.ts
 ├── middlewares/
-│   └── __tests__/
+│   └── tests/
 │       └── auth.test.ts
 ├── plugins/
-│   └── __tests__/
+│   └── tests/
 │       ├── auth.test.ts
 │       └── index.test.ts
-└── services/
-    └── __tests__/
-        └── auth.service.test.ts
+├── services/
+│   └── tests/
+│       └── auth.service.test.ts
+└── tests/
+    ├── e2e/
+    │   ├── helpers/
+    │   │   └── test-server.ts
+    │   ├── auth.e2e.test.ts
+    │   ├── companies.e2e.test.ts
+    │   ├── health.e2e.test.ts
+    │   └── README.md
+    └── README.md
 ```
 
-## Uruchomienie testów
+## 🚀 Uruchomienie testów
 
 ```bash
 # Zainstaluj zależności (jeśli jeszcze nie)
 npm install
 
-# Uruchom wszystkie testy
+# Uruchom wszystkie testy (jednostkowe + e2e)
 npm test
+
+# Uruchom tylko testy jednostkowe
+npm run test:unit
+
+# Uruchom tylko testy e2e
+npm run test:e2e
 
 # Uruchom testy w trybie watch
 npm run test:watch
+
+# Uruchom testy e2e w trybie watch
+npm run test:e2e:watch
 
 # Uruchom testy z pokryciem kodu
 npm run test:coverage
@@ -113,17 +136,53 @@ npm run test:coverage
 - **vi.mock()** - mockowanie zależności (prisma, redis, jwt, etc.)
 - **TypeScript** - pełna obsługa typów w testach
 
-## Statystyki
+## 📊 Statystyki
 
-- **4 pliki testowe**
-- **50+ przypadków testowych**
+### Testy jednostkowe
+- **7 plików testowych**
+- **80+ przypadków testowych**
 - **100% pokrycie kluczowej logiki biznesowej**
 
-## Dobre praktyki
+### Testy E2E
+- **4 pliki testowe**
+- **50+ przypadków testowych**
+- **100% pokrycie głównych przepływów HTTP**
 
+### Razem
+- **11 plików testowych**
+- **130+ przypadków testowych**
+
+## 🎯 Rodzaje testów
+
+### Testy jednostkowe (Unit Tests)
+- **Lokalizacja**: `src/*/tests/*.test.ts`
+- **Cel**: Testowanie pojedynczych funkcji/klas w izolacji
+- **Zależności**: Zmockowane
+- **Szybkość**: Bardzo szybkie
+
+### Testy E2E (End-to-End Tests)
+- **Lokalizacja**: `src/tests/e2e/*.e2e.test.ts`
+- **Cel**: Testowanie pełnych przepływów HTTP
+- **Zależności**: Rzeczywiste (baza danych, Redis)
+- **Szybkość**: Wolniejsze, ale bardziej realistyczne
+
+Szczegółowe informacje o testach E2E znajdziesz w [src/tests/e2e/README.md](./e2e/README.md)
+
+## 📖 Dobre praktyki
+
+### Testy jednostkowe
 ✅ Każdy test jest niezależny (beforeEach czyszczenie mocków)  
 ✅ Mockowanie wszystkich zależności zewnętrznych  
 ✅ Testowanie happy path i error handling  
 ✅ Czytelne nazwy testów po polsku  
 ✅ Grupowanie testów za pomocą describe()  
 ✅ Testowanie edge cases (null, undefined, puste wartości)
+
+### Testy E2E
+✅ Używaj `setupTests()` w `beforeEach`  
+✅ Używaj `teardownTests()` w `afterAll`  
+✅ Testuj pełne przepływy użytkownika  
+✅ Weryfikuj status codes HTTP  
+✅ Sprawdzaj strukturę odpowiedzi JSON  
+✅ Testuj autentykację i autoryzację  
+✅ Czyszczenie bazy danych między testami

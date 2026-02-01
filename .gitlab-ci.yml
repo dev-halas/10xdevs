@@ -1,0 +1,274 @@
+# GitLab CI/CD Configuration for Company Management System
+# Node.js 18.x, PostgreSQL 15, Redis 7
+
+stages:
+  - install
+  - test
+  - build
+  - deploy
+
+variables:
+  NODE_VERSION: "18"
+  POSTGRES_VERSION: "15"
+  REDIS_VERSION: "7"
+  # Database configuration for tests
+  DATABASE_URL: "postgresql://test_user:test_password@postgres:5432/test_db"
+  REDIS_URL: "redis://redis:6379"
+  # JWT configuration for tests
+  JWT_SECRET: "test-secret-key-for-ci-only"
+  JWT_EXPIRES_IN: "15m"
+  REFRESH_TOKEN_EXPIRES_IN: "7d"
+
+# Cache dla szybszych buildów
+cache:
+  key:
+    files:
+      - server/package-lock.json
+      - web/package-lock.json
+  paths:
+    - server/node_modules/
+    - web/node_modules/
+    - .npm/
+
+# ==========================================
+# STAGE 1: INSTALL DEPENDENCIES
+# ==========================================
+
+install:server:
+  stage: install
+  image: node:${NODE_VERSION}
+  script:
+    - cd server
+    - npm ci --cache .npm --prefer-offline
+  artifacts:
+    paths:
+      - server/node_modules/
+    expire_in: 1 hour
+  only:
+    changes:
+      - server/**/*
+      - .gitlab-ci.yml
+
+install:web:
+  stage: install
+  image: node:${NODE_VERSION}
+  script:
+    - cd web
+    - npm ci --cache .npm --prefer-offline
+  artifacts:
+    paths:
+      - web/node_modules/
+    expire_in: 1 hour
+  only:
+    changes:
+      - web/**/*
+      - .gitlab-ci.yml
+
+# ==========================================
+# STAGE 2: TESTS
+# ==========================================
+
+test:backend:unit:
+  stage: test
+  image: node:${NODE_VERSION}
+  services:
+    - name: postgres:${POSTGRES_VERSION}
+      alias: postgres
+      variables:
+        POSTGRES_DB: test_db
+        POSTGRES_USER: test_user
+        POSTGRES_PASSWORD: test_password
+    - name: redis:${REDIS_VERSION}
+      alias: redis
+  dependencies:
+    - install:server
+  before_script:
+    - cd server
+    # Generate Prisma Client
+    - npx prisma generate
+    # Run migrations
+    - npx prisma migrate deploy
+  script:
+    - npm run test:unit
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: server/coverage/cobertura-coverage.xml
+    paths:
+      - server/coverage/
+    expire_in: 1 week
+  only:
+    changes:
+      - server/**/*
+      - .gitlab-ci.yml
+
+test:backend:e2e:
+  stage: test
+  image: node:${NODE_VERSION}
+  services:
+    - name: postgres:${POSTGRES_VERSION}
+      alias: postgres
+      variables:
+        POSTGRES_DB: test_db
+        POSTGRES_USER: test_user
+        POSTGRES_PASSWORD: test_password
+    - name: redis:${REDIS_VERSION}
+      alias: redis
+  dependencies:
+    - install:server
+  before_script:
+    - cd server
+    - npx prisma generate
+    - npx prisma migrate deploy
+  script:
+    - npm run test:e2e
+  only:
+    changes:
+      - server/**/*
+      - .gitlab-ci.yml
+
+test:frontend:unit:
+  stage: test
+  image: node:${NODE_VERSION}
+  dependencies:
+    - install:web
+  script:
+    - cd web
+    - npm run test
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: web/coverage/cobertura-coverage.xml
+    paths:
+      - web/coverage/
+    expire_in: 1 week
+  only:
+    changes:
+      - web/**/*
+      - .gitlab-ci.yml
+
+test:frontend:e2e:
+  stage: test
+  image: mcr.microsoft.com/playwright:v1.58.0-noble
+  services:
+    - name: postgres:${POSTGRES_VERSION}
+      alias: postgres
+      variables:
+        POSTGRES_DB: test_db
+        POSTGRES_USER: test_user
+        POSTGRES_PASSWORD: test_password
+    - name: redis:${REDIS_VERSION}
+      alias: redis
+  dependencies:
+    - install:web
+    - install:server
+  variables:
+    NEXT_PUBLIC_API_URL: "http://localhost:3000/api"
+  before_script:
+    # Start backend server
+    - cd server
+    - npx prisma generate
+    - npx prisma migrate deploy
+    - npm run server &
+    - sleep 5
+    # Prepare frontend
+    - cd ../web
+  script:
+    - npm run test:e2e
+  artifacts:
+    when: on_failure
+    paths:
+      - web/playwright-report/
+      - web/test-results/
+    expire_in: 1 week
+  only:
+    changes:
+      - web/**/*
+      - server/**/*
+      - .gitlab-ci.yml
+
+# ==========================================
+# STAGE 3: BUILD
+# ==========================================
+
+build:backend:
+  stage: build
+  image: node:${NODE_VERSION}
+  dependencies:
+    - install:server
+  script:
+    - cd server
+    - npx prisma generate
+    - npm run build
+  artifacts:
+    paths:
+      - server/dist/
+      - server/node_modules/
+      - server/prisma/
+    expire_in: 1 week
+  only:
+    - main
+    - develop
+
+build:frontend:
+  stage: build
+  image: node:${NODE_VERSION}
+  dependencies:
+    - install:web
+  variables:
+    NEXT_PUBLIC_API_URL: "${PRODUCTION_API_URL}"
+  script:
+    - cd web
+    - npm run build
+  artifacts:
+    paths:
+      - web/.next/
+      - web/node_modules/
+    expire_in: 1 week
+  only:
+    - main
+    - develop
+
+# ==========================================
+# STAGE 4: DEPLOY (Optional)
+# ==========================================
+
+deploy:staging:
+  stage: deploy
+  image: node:${NODE_VERSION}
+  dependencies:
+    - build:backend
+    - build:frontend
+  script:
+    - echo "Deployment to staging environment"
+    # Tutaj dodaj komendy do wdrożenia (np. SSH, Docker, Railway, etc.)
+    # Przykład:
+    # - apt-get update && apt-get install -y rsync
+    # - rsync -avz --delete server/ user@staging-server:/path/to/server/
+    # - rsync -avz --delete web/ user@staging-server:/path/to/web/
+  environment:
+    name: staging
+    url: https://staging.yourapp.com
+  only:
+    - develop
+  when: manual
+
+deploy:production:
+  stage: deploy
+  image: node:${NODE_VERSION}
+  dependencies:
+    - build:backend
+    - build:frontend
+  script:
+    - echo "Deployment to production environment"
+    # Tutaj dodaj komendy do wdrożenia produkcyjnego
+  environment:
+    name: production
+    url: https://yourapp.com
+  only:
+    - main
+  when: manual

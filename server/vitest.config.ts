@@ -4,6 +4,13 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    // Uruchom testy e2e sekwencyjnie, aby uniknąć konfliktów w bazie danych
+    pool: 'forks',
+    poolOptions: {
+      forks: {
+        singleFork: true,
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
